@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  BackendTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: my-backend-task
+      Cpu: "256"
+      Memory: "512"
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/ecsTaskExecutionRole"
+      ContainerDefinitions:
+        - Name: backend
+          Image: !Sub "{{resolve:ssm:/myapp/ecr/backend}}:latest"
+          Environment:
+            - Name: DATABASE_URL
+              Value: !Sub "{{resolve:ssm:/myapp/db/url}}"
+          Memory: 512
+          Cpu: 256
+          PortMappings:
+            - ContainerPort: 5000
+
+  FrontendTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: my-frontend-task
+      Cpu: "256"
+      Memory: "512"
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/ecsTaskExecutionRole"
+      ContainerDefinitions:
+        - Name: frontend
+          Image: !Sub "{{resolve:ssm:/myapp/ecr/frontend}}:latest"
+          Memory: 512
+          Cpu: 256
+          PortMappings:
+            - ContainerPort: 3000

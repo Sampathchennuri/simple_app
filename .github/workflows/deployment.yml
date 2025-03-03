@@ -1,0 +1,57 @@
+name: Deploy to AWS Fargate
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Deploy ECR Repositories
+        run: |
+          aws cloudformation deploy --stack-name my-ecr --template-file ecr.yml --capabilities CAPABILITY_NAMED_IAM
+
+      - name: Get ECR URIs and Store in SSM Parameter Store
+        run: |
+          FRONTEND_ECR=$(aws cloudformation list-exports --query "Exports[?Name=='FrontendECRUri'].Value" --output text)
+          BACKEND_ECR=$(aws cloudformation list-exports --query "Exports[?Name=='BackendECRUri'].Value" --output text)
+
+          aws ssm put-parameter --name "/myapp/ecr/frontend" --value "$FRONTEND_ECR" --type "String" --overwrite
+          aws ssm put-parameter --name "/myapp/ecr/backend" --value "$BACKEND_ECR" --type "String" --overwrite
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
+
+      - name: Build and Push Server Image
+        run: |
+          BACKEND_ECR_URI=$(aws ssm get-parameter --name "/myapp/ecr/backend" --query "Parameter.Value" --output text)
+          docker build -t simple-app-server ./server
+          docker tag simple-app-server:latest $BACKEND_ECR_URI:latest
+          docker push $BACKEND_ECR_URI:latest
+
+      - name: Build and Push Frontend Image
+        run: |
+          FRONTEND_ECR_URI=$(aws ssm get-parameter --name "/myapp/ecr/frontend" --query "Parameter.Value" --output text)
+          docker build -t simple-app-client ./client
+          docker tag simple-app-client:latest $FRONTEND_ECR_URI:latest
+          docker push $FRONTEND_ECR_URI:latest
+
+      - name: Deploy CloudFormation Stacks
+        run: |
+          aws cloudformation deploy --stack-name network --template-file network.yml --capabilities CAPABILITY_NAMED_IAM
+          aws cloudformation deploy --stack-name database --template-file database.yml --capabilities CAPABILITY_NAMED_IAM
+          aws cloudformation deploy --stack-name ecs-cluster --template-file ecs-cluster.yml --capabilities CAPABILITY_NAMED_IAM
+          aws cloudformation deploy --stack-name ecs-services --template-file ecs-services.yml --capabilities CAPABILITY_NAMED_IAM

@@ -1,0 +1,26 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  FrontendECR:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: my-frontend-repo
+      ImageScanningConfiguration:
+        ScanOnPush: true
+
+  BackendECR:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: my-backend-repo
+      ImageScanningConfiguration:
+        ScanOnPush: true
+
+Outputs:
+  FrontendECRUri:
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/my-frontend-repo"
+    Export:
+      Name: FrontendECRUri
+
+  BackendECRUri:
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/my-backend-repo"
+    Export:
+      Name: BackendECRUri
