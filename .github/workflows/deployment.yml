@@ -13,6 +13,7 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: Dev
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -20,13 +21,13 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          role-to-assume: ${{secrets.AWS_ROLE}}
-          aws-region: us-east-1
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{secrets.AWS_ROLE}}
+          aws-region: ${{ secrets.AWS_REGION }}
           role-session-name: GitHub-OIDC
 
       - name: Deploy ECR Repositories
         run: |
-          aws cloudformation deploy --stack-name my-ecr --template-file ecr.yml --capabilities CAPABILITY_NAMED_IAM
+          aws cloudformation deploy --stack-name my-ecr --template-file cloudformation/ecr-template.yml --capabilities CAPABILITY_NAMED_IAM
 
       - name: Get ECR URIs and Store in SSM Parameter Store
         run: |
@@ -56,7 +57,7 @@ jobs:
 
       - name: Deploy CloudFormation Stacks
         run: |
-          aws cloudformation deploy --stack-name network --template-file network.yml --capabilities CAPABILITY_NAMED_IAM
-          aws cloudformation deploy --stack-name database --template-file database.yml --capabilities CAPABILITY_NAMED_IAM
-          aws cloudformation deploy --stack-name ecs-cluster --template-file ecs-cluster.yml --capabilities CAPABILITY_NAMED_IAM
-          aws cloudformation deploy --stack-name ecs-services --template-file ecs-services.yml --capabilities CAPABILITY_NAMED_IAM
+          aws cloudformation deploy --stack-name network --template-file cloudformation/network.yml --capabilities CAPABILITY_NAMED_IAM
+          aws cloudformation deploy --stack-name database --template-file cloudformation/database.yml --capabilities CAPABILITY_NAMED_IAM
+          aws cloudformation deploy --stack-name ecs-cluster --template-file cloudformation/ecs-cluster.yml --capabilities CAPABILITY_NAMED_IAM
+          aws cloudformation deploy --stack-name ecs-services --template-file cloudformation/ecs-services.yml --capabilities CAPABILITY_NAMED_IAM
