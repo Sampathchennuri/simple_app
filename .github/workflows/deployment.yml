@@ -27,7 +27,7 @@ jobs:
 
       - name: Deploy ECR Repositories
         run: |
-          aws cloudformation deploy --stack-name my-ecr --template-file ../CloudFormation/ecr-template.yml --capabilities CAPABILITY_NAMED_IAM
+          aws cloudformation deploy --stack-name my-ecr --template-file CloudFormation/ecr-template.yml --capabilities CAPABILITY_NAMED_IAM
 
       - name: Get ECR URIs and Store in SSM Parameter Store
         run: |
@@ -57,7 +57,7 @@ jobs:
 
       - name: Deploy CloudFormation Stacks
         run: |
-          aws cloudformation deploy --stack-name network --template-file ../CloudFormation/network.yml --capabilities CAPABILITY_NAMED_IAM
-          aws cloudformation deploy --stack-name database --template-file ../CloudFormation/database.yml --capabilities CAPABILITY_NAMED_IAM
-          aws cloudformation deploy --stack-name ecs-cluster --template-file ../CloudFormation/ecs-cluster.yml --capabilities CAPABILITY_NAMED_IAM
-          aws cloudformation deploy --stack-name ecs-services --template-file ../CloudFormation/ecs-services.yml --capabilities CAPABILITY_NAMED_IAM
+          aws cloudformation deploy --stack-name network --template-file CloudFormation/network.yml --capabilities CAPABILITY_NAMED_IAM
+          aws cloudformation deploy --stack-name database --template-file CloudFormation/database.yml --capabilities CAPABILITY_NAMED_IAM
+          aws cloudformation deploy --stack-name ecs-cluster --template-file CloudFormation/ecs-cluster.yml --capabilities CAPABILITY_NAMED_IAM
+          aws cloudformation deploy --stack-name ecs-services --template-file CloudFormation/ecs-services.yml --capabilities CAPABILITY_NAMED_IAM
